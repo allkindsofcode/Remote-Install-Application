@@ -1,0 +1,36 @@
+function install {
+
+#Version 2.0
+#Contributors
+#bsutton
+#rdrennen
+#Change "Canpack.com" to match your Windows Credential group
+$pscreds = Get-StoredCredential -Target "canpack.com"
+#Computer specification, speicify CSV path for multi-computer deployment
+$computers = (read-host -prompt "Please enter Computer Name")#Import-Csv -Path "\\PC-US32-01-0235\Muncie\Sysprep\IT Setup\pc.csv"
+
+#Path too application change as neccessary
+$Application = "\\PC-US32-01-0235\Muncie\Sysprep\Software\Ignition\ClientLauncherSetup.exe"
+
+$computers | where{test-connection $_ -quiet -count 1} | ForEach-Object {
+
+  Invoke-Command -ComputerName $_ -Credential $pscreds -ScriptBlock {
+
+  copy-item $Application -recurse "\\$_\c$\items" 
+  }
+
+  Invoke-Command -ComputerName $_ -Credential $pscreds -ScriptBlock {
+  #change application location and name on remote system as needed
+  start-Process -FilePath "\\$_\c$\items\ClientLauncherSetup.exe" /verysilent
+  }
+
+  start-sleep 60
+
+  Invoke-Command -ComputerName $_ -Credential $pscreds -ScriptBlock {
+
+  #change application location and name on remote system as needed
+  Remove-Item -path "C:\items\ClientLauncherSetup.exe" -Force
+  }
+}
+
+}
